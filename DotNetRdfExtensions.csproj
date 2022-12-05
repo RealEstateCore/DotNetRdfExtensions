@@ -4,12 +4,13 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyVersion>0.1.0</AssemblyVersion>
-	<PackageVersion>0.1.0</PackageVersion>
-	<Authors>RealEstateCore</Authors>
-	<Description>RealEstateCore DotNetRDF extensions.</Description>
-	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
-	<PackageReadmeFile>README.md</PackageReadmeFile>
+    <AssemblyVersion>0.1.1</AssemblyVersion>
+    <PackageVersion>0.1.1</PackageVersion>
+    <Authors>RealEstateCore</Authors>
+    <Description>RealEstateCore DotNetRDF extensions.</Description>
+    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageId>RealEstateCore.DotNetRdfExtensions</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
