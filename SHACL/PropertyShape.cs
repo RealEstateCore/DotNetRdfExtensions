@@ -10,8 +10,8 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
 
     public class PropertyShape : Shape
     {
-        public PropertyShape(INode node, ShapesGraph graph)
-            : base(node, graph)
+        public PropertyShape(INode node)
+            : base(node)
         {
         }
 

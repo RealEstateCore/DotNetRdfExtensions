@@ -10,8 +10,8 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
 
     public class NodeShape : Shape
     {
-        public NodeShape(IUriNode node, ShapesGraph graph)
-            : base(node, graph)
+        public NodeShape(IUriNode node)
+            : base(node)
         {
         }
 
@@ -32,7 +32,7 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
                 IUriNode shProperty = this.Graph.CreateUriNode(SH.property);
                 foreach (Triple t in this.Graph.GetTriplesWithSubjectPredicate(this.Node, shProperty))
                 {
-                    yield return new PropertyShape(t.Object, this.Graph);
+                    yield return new PropertyShape(t.Object);
                 }
             }
         }
@@ -46,7 +46,7 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
                 {
                     if (t.Object is IUriNode superClass && superClass.IsNodeShape())
                     {
-                        yield return new NodeShape(superClass, this.Graph);
+                        yield return new NodeShape(superClass);
                     }
                 }
             }
@@ -77,7 +77,7 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
                 {
                     if (t.Subject is IUriNode subClassNode && subClassNode.IsNodeShape())
                     {
-                        yield return new NodeShape(subClassNode, this.Graph);
+                        yield return new NodeShape(subClassNode);
                     }
                 }
             }
@@ -170,7 +170,7 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
             IUriNode shProperty = this.Graph.CreateUriNode(SH.property);
             this.Graph.Assert(this.Node, shProperty, pShapeNode);
 
-            return new PropertyShape(pShapeNode, this.Graph);
+            return new PropertyShape(pShapeNode);
         }
     }
 }

@@ -2,9 +2,6 @@
 // Copyright (c) RealEstateCore Consortium. All rights reserved.
 // </copyright>
 
-/// <summary>
-/// A set of often-used URIs, for easy reference.
-/// </summary>
 namespace RealEstateCore.DotNetRdfExtensions
 {
 #pragma warning disable SA1307 // Accessible fields should begin with upper-case letter

@@ -6,7 +6,6 @@ namespace RealEstateCore.DotNetRdfExtensions
 {
     using VDS.RDF;
     using VDS.RDF.Nodes;
-    using VDS.RDF.Ontology;
     using VDS.RDF.Parsing;
 
     /// <summary>
@@ -127,7 +126,21 @@ namespace RealEstateCore.DotNetRdfExtensions
             }
         }
 
-        // TODO: This should probably be fixed to handle URN namespaces properly.
+        /// <summary>
+        /// Returns the namespace of this URI node, i.e., the counterpart to <seealso cref="LocalName(IUriNode)"/>.
+        /// </summary>
+        /// <param name="node">Input URI node.</param>
+        /// <returns>
+        /// If the URI is hash-based (i.e., if it has an ending prepended by #), then everything up to and including the hash
+        /// sign is returned; otherwise, everything up to the last forward slash.
+        /// <br/><br/>
+        /// I.e.:<br/>
+        /// <c>https://w3id.org/rec#Building</c> yields <c>https://w3id.org/rec#</c>.<br />
+        /// <c>https://w3id.org/rec/Refrigerator</c> yields <c>https://w3id.org/rec/</c>.
+        /// </returns>
+        /// <exception cref="UriFormatException">If a namespace/local name separator cannot be found, e.g.,
+        /// if the input URI is a URN (<c>urn:isbn:0451450523</c>), or if it lacks a path component
+        /// (<c>https://w3id.org/</c>).</exception>
         public static Uri GetNamespace(this IUriNode node)
         {
             if (node.Uri.Fragment.Length > 0)
@@ -146,9 +159,9 @@ namespace RealEstateCore.DotNetRdfExtensions
         }
 
         /// <summary>
-        /// Returns the local portion of the URI of a given URI node.
+        /// Returns the local portion of the URI of this node.
         /// </summary>
-        /// <param name="node">Node that is being parsed.</param>
+        /// <param name="node">Input URI node.</param>
         /// <returns>
         /// If the URI is hash-based (i.e., if it has an ending prepended by #), then the fragment following the hash
         /// sign is returned; otherwise, the .NET method <see cref="Path.GetFileName(string?)"/> is called, typically
@@ -196,12 +209,22 @@ namespace RealEstateCore.DotNetRdfExtensions
             }
         }
 
+        /// <summary>
+        /// Returns RDF types for this URI node.
+        /// </summary>
+        /// <param name="node">Input node.</param>
+        /// <returns>All URI nodes that are asserted to be <c>rdf:type</c> for the input node.</returns>
         public static IEnumerable<IUriNode> DirectRdfTypes(this IUriNode node)
         {
             IUriNode rdfType = node.Graph.CreateUriNode(RDF.type);
             return node.Graph.GetTriplesWithSubjectPredicate(node, rdfType).Select(trip => trip.Object).UriNodes();
         }
 
+        /// <summary>
+        /// Returns RDF types, and all their transitive superclasses, for this URI node.
+        /// </summary>
+        /// <param name="node">Input node.</param>
+        /// <returns>All URI nodes that are asserted to be <c>rdf:type</c> for the input node, or that are transitively asserted to be RDFS superclasses of such type nodes.</returns>
         public static IEnumerable<IUriNode> TransitiveRdfTypes(this IUriNode node)
         {
             IEnumerable<IUriNode> directRdfTypes = node.DirectRdfTypes();
@@ -209,6 +232,11 @@ namespace RealEstateCore.DotNetRdfExtensions
             return directRdfTypes.Union(superClassesOfDirectRdfTypes);
         }
 
+        /// <summary>
+        /// Returns direct RDFS superclasses for this URI node.
+        /// </summary>
+        /// <param name="node">Input node.</param>
+        /// <returns>All URI nodes that the input node is asserted to be <c>rdfs:subClassOf</c>.</returns>
         public static IEnumerable<IUriNode> DirectSuperClasses(this IUriNode node)
         {
             IUriNode rdfsSubClassOf = node.Graph.CreateUriNode(RDFS.subClassOf);
@@ -221,6 +249,12 @@ namespace RealEstateCore.DotNetRdfExtensions
             }
         }
 
+        /// <summary>
+        /// Returns direct and transitive superclasses for this URI node.
+        /// </summary>
+        /// <param name="node">Input node.</param>
+        /// <returns>All URI nodes that the input node is asserted to be <c>rdfs:subClassOf</c>,
+        /// and transitively, all nodes that those parent nodes are <c>rdfs:subClassOf</c>, and so on.</returns>
         public static IEnumerable<IUriNode> TransitiveSuperClasses(this IUriNode node)
         {
             IEnumerable<IUriNode> directSuperClasses = node.DirectSuperClasses();
@@ -234,6 +268,11 @@ namespace RealEstateCore.DotNetRdfExtensions
             return allSuperClasses;
         }
 
+        /// <summary>
+        /// Returns direct RDFS subclasses for this URI node.
+        /// </summary>
+        /// <param name="node">Input node.</param>
+        /// <returns>All URI nodes that are asserted to be <c>rdfs:subClassOf</c> the input node.</returns>
         public static IEnumerable<IUriNode> DirectSubClasses(this IUriNode node)
         {
             IUriNode rdfsSubClassOf = node.Graph.CreateUriNode(RDFS.subClassOf);
@@ -246,6 +285,12 @@ namespace RealEstateCore.DotNetRdfExtensions
             }
         }
 
+        /// <summary>
+        /// Returns direct and transitive subclasses for this URI node.
+        /// </summary>
+        /// <param name="node">Input node.</param>
+        /// <returns>All URI nodes that are asserted to be <c>rdfs:subClassOf</c> the input node,
+        /// and transitively, all nodes that are <c>rdfs:subClassOf</c> those nodes, and so on.</returns>
         public static IEnumerable<IUriNode> TransitiveSubClasses(this IUriNode node)
         {
             IEnumerable<IUriNode> directSubClasses = node.DirectSubClasses();
@@ -259,76 +304,77 @@ namespace RealEstateCore.DotNetRdfExtensions
             return allSubClasses;
         }
 
+        /// <summary>
+        /// Returns instances that are RDF typed as members of this node.
+        /// </summary>
+        /// <param name="node">Input node.</param>
+        /// <returns>All nodes that are asserted to have this node as their <c>rdf:type</c>.</returns>
         public static IEnumerable<INode> RdfTypedInstances(this IUriNode node)
         {
             IUriNode rdfType = node.Graph.CreateUriNode(RDF.type);
             return node.Graph.GetTriplesWithPredicateObject(rdfType, node).Subjects();
         }
 
+        /// <summary>
+        /// Checks if this URI node is an OWL Object Property.
+        /// </summary>
+        /// <param name="node">Input node.</param>
+        /// <returns><c>true</c> if this node has an rdf:type, directly or transitively that is owl:ObjectProperty.</returns>
         public static bool IsObjectProperty(this IUriNode node)
         {
             return node.TransitiveRdfTypes().Any(rdfType => rdfType.Uri.AbsoluteUri.Equals(OWL.ObjectProperty.AbsoluteUri));
         }
 
+        /// <summary>
+        /// Checks if this URI node is an OWL Object Property.
+        /// </summary>
+        /// <param name="node">Input node.</param>
+        /// <returns><c>true</c> if this node has an rdf:type, directly or transitively that is owl:DataProperty.</returns>
         public static bool IsDataProperty(this IUriNode node)
         {
             return node.TransitiveRdfTypes().Any(rdfType => rdfType.Uri.AbsoluteUri.Equals(OWL.DatatypeProperty.AbsoluteUri));
         }
 
+        /// <summary>
+        /// Returns any URI nodes that are asserted to be in the <c>rdfs:range</c> of this node; under RDFS semantics implying that
+        /// this node is an rdf:property.
+        /// </summary>
+        /// <param name="node">Input node.</param>
+        /// <returns>All URI nodes asserted to be <c>rdfs:range</c> for this node.</returns>
         public static IEnumerable<IUriNode> RdfsRanges(this IUriNode node)
         {
             IUriNode rdfsRange = node.Graph.CreateUriNode(RDFS.range);
             return node.Graph.GetTriplesWithSubjectPredicate(node, rdfsRange).Select(triple => triple.Object).UriNodes();
         }
 
+        /// <summary>
+        /// Syntactic sugar to extract subject nodes from this triple collection.
+        /// </summary>
+        /// <param name="triples">Input triple collection.</param>
+        /// <returns>Subject nodes of the triples.</returns>
         public static IEnumerable<INode> Subjects(this IEnumerable<Triple> triples)
         {
             return triples.Select(triple => triple.Subject);
         }
 
+        /// <summary>
+        /// Syntactic sugar to extract predicate nodes from this triple collection.
+        /// </summary>
+        /// <param name="triples">Input triple collection.</param>
+        /// <returns>Predicate nodes of the triples.</returns>
         public static IEnumerable<INode> Predicates(this IEnumerable<Triple> triples)
         {
             return triples.Select(triple => triple.Predicate);
         }
 
+        /// <summary>
+        /// Syntactic sugar to extract object nodes from this triple collection.
+        /// </summary>
+        /// <param name="triples">Input triple collection.</param>
+        /// <returns>Object nodes of the triples.</returns>
         public static IEnumerable<INode> Objects(this IEnumerable<Triple> triples)
         {
             return triples.Select(triple => triple.Object);
-        }
-
-        public static IEnumerable<INode> GetNodesViaPredicate(this OntologyResource resource, INode predicate)
-        {
-            return resource.Graph.GetTriplesWithSubjectPredicate(resource.Resource, predicate).Objects();
-        }
-
-        public static bool IsEnumerationDatatype(this OntologyClass oClass)
-        {
-            INode oneOf = oClass.Graph.CreateUriNode(OWL.oneOf);
-            if (oClass.IsRdfsDatatype())
-            {
-                if (oClass.EquivalentClasses.Count() == 1)
-                {
-                    return oClass.EquivalentClasses.Single().GetNodesViaPredicate(oneOf).Count() == 1;
-                }
-                else
-                {
-                    return oClass.GetNodesViaPredicate(oneOf).Count() == 1;
-                }
-            }
-
-            return false;
-        }
-
-        public static IEnumerable<INode> AsEnumeration(this OntologyClass oClass)
-        {
-            INode oneOf = oClass.Graph.CreateUriNode(OWL.oneOf);
-            INode list = oClass.EquivalentClasses.Append(oClass).SelectMany(equiv => equiv.GetNodesViaPredicate(oneOf)).First();
-            return oClass.Graph.GetListItems(list);
-        }
-
-        public static bool IsRdfsDatatype(this OntologyClass oClass)
-        {
-            return oClass.Types.UriNodes().Any(classType => classType.Uri.AbsoluteUri.Equals(RDFS.Datatype.AbsoluteUri));
         }
     }
 }
