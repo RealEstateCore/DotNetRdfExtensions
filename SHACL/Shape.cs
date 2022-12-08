@@ -1,19 +1,58 @@
-using VDS.RDF;
-using VDS.RDF.Shacl;
-using VDS.RDF.Nodes;
+// <copyright file="Shape.cs" company="RealEstateCore Consortium">
+// Copyright (c) RealEstateCore Consortium. All rights reserved.
+// </copyright>
 
-namespace DotNetRdfExtensions.SHACL
+namespace RealEstateCore.DotNetRdfExtensions.SHACL
 {
-    public class Shape: IEquatable<Shape>  {
-        /// <summary>
-        /// The Node which this Shape is a wrapper around.
-        /// </summary>
-        protected INode _node;
-        /// <summary>
-        /// The Graph from which this Shape originates.
-        /// </summary>
-        protected ShapesGraph _graph;
+    using VDS.RDF;
+    using VDS.RDF.Nodes;
+    using VDS.RDF.Shacl;
+    using VDS.RDF.Writing.Formatting;
 
+    public class Shape : IEquatable<Shape>
+    {
+        protected internal Shape(INode node, ShapesGraph graph)
+        {
+            this.Node = node;
+            this.Graph = graph;
+            this.Formatter = new TurtleFormatter(this.Graph);
+        }
+
+        public IUriNode? NodeKind
+        {
+            get
+            {
+                IUriNode shNodeKind = this.Graph.CreateUriNode(SH.nodeKind);
+                return this.Graph.GetTriplesWithSubjectPredicate(this.Node, shNodeKind).Select(trip => trip.Object).UriNodes().FirstOrDefault();
+            }
+
+            set
+            {
+                IUriNode shNodeKind = this.Graph.CreateUriNode(SH.nodeKind);
+                IUriNode? currentNodeKind = this.Graph.GetTriplesWithSubjectPredicate(this.Node, shNodeKind).Select(trip => trip.Object).UriNodes().FirstOrDefault();
+                if (currentNodeKind != null)
+                {
+                    this.Graph.Retract(this.Node, shNodeKind, currentNodeKind);
+                }
+
+                this.Graph.Assert(this.Node, shNodeKind, value);
+            }
+        }
+
+        public INode Node { get; }
+
+        public ShapesGraph Graph { get; }
+
+        public INodeFormatter Formatter { get; }
+
+        public bool IsDeprecated
+        {
+            get
+            {
+                IUriNode owlDeprecated = this.Graph.CreateUriNode(OWL.deprecated);
+                return this.Graph.GetTriplesWithSubjectPredicate(this.Node, owlDeprecated).Objects().LiteralNodes().Any(deprecationNode => deprecationNode.AsValuedNode().AsBoolean() == true);
+            }
+        }
 
         // Implementation of IEquatable<T> interface
         public bool Equals(Shape? shape)
@@ -21,41 +60,18 @@ namespace DotNetRdfExtensions.SHACL
             return this.Node == shape?.Node;
         }
 
-        public IUriNode? NodeKind {
-            get {
-                IUriNode shNodeKind = _graph.CreateUriNode(SH.nodeKind);
-                return _graph.GetTriplesWithSubjectPredicate(_node, shNodeKind).Select(trip => trip.Object).UriNodes().FirstOrDefault();
-            }
-        }
-
-        protected internal Shape(INode node, ShapesGraph graph) {
-            _node = node;
-            _graph = graph;
-        }
-
-        public INode Node
+        public void AddLabel(string language, string value)
         {
-            get
-            {
-                return _node;
-            }
+            IUriNode rdfsLabel = this.Graph.CreateUriNode(RDFS.label);
+            ILiteralNode labelNode = this.Graph.CreateLiteralNode(value, language);
+            this.Graph.Assert(this.Node, rdfsLabel, labelNode);
         }
 
-        public ShapesGraph Graph
+        public void AddComment(string language, string value)
         {
-            get
-            {
-                return _graph;
-            }
-        }
-
-        public bool IsDeprecated 
-        {
-            get 
-            {
-                IUriNode owlDeprecated = _graph.CreateUriNode(OWL.deprecated);
-                return _graph.GetTriplesWithSubjectPredicate(_node, owlDeprecated).Objects().LiteralNodes().Any(deprecationNode => deprecationNode.AsValuedNode().AsBoolean() == true);
-            }
+            IUriNode rdfsComment = this.Graph.CreateUriNode(RDFS.comment);
+            ILiteralNode commentNode = this.Graph.CreateLiteralNode(value, language);
+            this.Graph.Assert(this.Node, rdfsComment, commentNode);
         }
     }
 }
