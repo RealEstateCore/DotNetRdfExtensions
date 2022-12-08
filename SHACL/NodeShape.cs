@@ -6,25 +6,34 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
 {
     using VDS.RDF;
     using VDS.RDF.Query.Builder;
-    using VDS.RDF.Shacl;
 
+    /// <summary>
+    /// A SHACL NodeSHape.
+    /// </summary>
     public class NodeShape : Shape
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NodeShape"/> class.
+        /// </summary>
+        /// <param name="node">URI node that carries this NodeShape's identity.</param>
         public NodeShape(IUriNode node)
             : base(node)
         {
         }
 
-        public new IUriNode Node
-        {
-            get
-            {
-                return (IUriNode)base.Node;
-            }
-        }
+        /// <summary>
+        /// Gets the RDF graph node that holds this shape's identity.
+        /// </summary>
+        public new IUriNode Node => (IUriNode)base.Node;
 
+        /// <summary>
+        /// Gets the URI of this shape (shortcut for getting Uri property from <see cref="Node"/>).
+        /// </summary>
         public Uri Uri => this.Node.Uri;
 
+        /// <summary>
+        /// Gets all SHACL PropertyShapes defined on this NodeShape.
+        /// </summary>
         public IEnumerable<PropertyShape> PropertyShapes
         {
             get
@@ -37,68 +46,65 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
             }
         }
 
+        /// <summary>
+        /// Gets all direct supershapes (i.e., via <c>rdfs:subClassOf</c>) of this shape.
+        /// </summary>
         public IEnumerable<NodeShape> DirectSuperShapes
         {
             get
             {
-                IUriNode rdfsSubClassOf = this.Graph.CreateUriNode(RDFS.subClassOf);
-                foreach (Triple t in this.Graph.GetTriplesWithSubjectPredicate(this.Node, rdfsSubClassOf))
+                foreach (IUriNode superClass in this.Node.DirectSuperClasses().Where(superClass => superClass.IsNodeShape()))
                 {
-                    if (t.Object is IUriNode superClass && superClass.IsNodeShape())
-                    {
-                        yield return new NodeShape(superClass);
-                    }
+                    yield return new NodeShape(superClass);
                 }
             }
         }
 
-        public IEnumerable<NodeShape> SuperShapes
+        /// <summary>
+        /// Gets all supershapes (i.e., via <c>rdfs:subClassOf</c>, transitively) of this shape.
+        /// </summary>
+        public IEnumerable<NodeShape> TransitiveSuperShapes
         {
             get
             {
-                IEnumerable<NodeShape> directSuperShapes = this.DirectSuperShapes;
-                HashSet<NodeShape> allSuperShapes = new HashSet<NodeShape>();
-                allSuperShapes.UnionWith(directSuperShapes);
-                foreach (NodeShape superClass in directSuperShapes)
+                foreach (IUriNode superClass in this.Node.TransitiveSuperClasses().Where(superClass => superClass.IsNodeShape()))
                 {
-                    allSuperShapes.UnionWith(superClass.SuperShapes);
+                    yield return new NodeShape(superClass);
                 }
-
-                return allSuperShapes;
             }
         }
 
+        /// <summary>
+        /// Gets all direct subshapes (i.e., via <c>rdfs:subClassOf</c>) of this shape.
+        /// </summary>
         public IEnumerable<NodeShape> DirectSubShapes
         {
             get
             {
-                IUriNode rdfsSubClassOf = this.Graph.CreateUriNode(RDFS.subClassOf);
-                foreach (Triple t in this.Graph.GetTriplesWithPredicateObject(rdfsSubClassOf, this.Node))
+                foreach (IUriNode subClass in this.Node.DirectSubClasses().Where(subClass => subClass.IsNodeShape()))
                 {
-                    if (t.Subject is IUriNode subClassNode && subClassNode.IsNodeShape())
-                    {
-                        yield return new NodeShape(subClassNode);
-                    }
+                    yield return new NodeShape(subClass);
                 }
             }
         }
 
-        public IEnumerable<NodeShape> SubShapes
+        /// <summary>
+        /// Gets all subshapes (i.e., via <c>rdfs:subClassOf</c>, transitively) of this shape.
+        /// </summary>
+        public IEnumerable<NodeShape> TransitiveSubShapes
         {
             get
             {
-                IEnumerable<NodeShape> directSubShapes = this.DirectSubShapes;
-                HashSet<NodeShape> allSubShapes = new HashSet<NodeShape>();
-                allSubShapes.UnionWith(directSubShapes);
-                foreach (NodeShape subClass in directSubShapes)
+                foreach (IUriNode subClass in this.Node.TransitiveSubClasses().Where(subClass => subClass.IsNodeShape()))
                 {
-                    allSubShapes.UnionWith(subClass.SubShapes);
+                    yield return new NodeShape(subClass);
                 }
-
-                return allSubShapes;
             }
         }
 
+        /// <summary>
+        /// Gets the longest inheritance path from this shape to a root shape, following <c>rdfs:subClassOf</c> links.
+        /// </summary>
         public List<IUriNode> LongestSuperShapesPath
         {
             get
@@ -132,6 +138,9 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this shape is a top-level thing, i.e., owl:Thing or rdfs:Resource.
+        /// </summary>
         public bool IsTopThing
         {
             get
@@ -145,17 +154,30 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
             }
         }
 
+        /// <summary>
+        /// Adds an assertion that this shape is an <c>rdfs:subClassOf</c> another NodeShape.
+        /// </summary>
+        /// <param name="superShape">The added superclass NodeShape.</param>
         public void AddSuperClass(NodeShape superShape)
         {
             this.AddSuperClass(superShape.Node);
         }
 
+        /// <summary>
+        /// Adds an assertion that this shape is an <c>rdfs:subClassOf</c> another URI node.
+        /// </summary>
+        /// <param name="superClass">The added superclass URI node.</param>
         public void AddSuperClass(IUriNode superClass)
         {
             IUriNode rdfsSubClassOf = this.Graph.CreateUriNode(RDFS.subClassOf);
             this.Graph.Assert(this.Node, rdfsSubClassOf, superClass);
         }
 
+        /// <summary>
+        /// Creates a new PropertyShape on this NodeShape, with the given input path. Note that only single-predicate paths (i.e., URIs) are supported.
+        /// </summary>
+        /// <param name="path">The sh:Path of the new property shape.</param>
+        /// <returns>The newly created PropertyShape.</returns>
         public PropertyShape CreatePropertyShape(Uri path)
         {
             IBlankNode pShapeNode = this.Graph.CreateBlankNode();
