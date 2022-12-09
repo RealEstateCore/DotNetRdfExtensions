@@ -6,15 +6,24 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
 {
     using VDS.RDF;
     using VDS.RDF.Parsing;
-    using VDS.RDF.Shacl;
 
+    /// <summary>
+    /// A SHACL PropertyShape.
+    /// </summary>
     public class PropertyShape : Shape
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PropertyShape"/> class.
+        /// </summary>
+        /// <param name="node">URI node that carries this PropertyShape's identity.</param>
         public PropertyShape(INode node)
             : base(node)
         {
         }
 
+        /// <summary>
+        /// Gets the sh:Path of this PropertyShape.
+        /// </summary>
         public INode Path
         {
             get
@@ -24,6 +33,9 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
             }
         }
 
+        /// <summary>
+        /// Gets the asserted sh:datatype of this PropertyShape if defined, else null.
+        /// </summary>
         public IUriNode? Datatype
         {
             get
@@ -33,6 +45,9 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
             }
         }
 
+        /// <summary>
+        /// Gets the asserted sh:class of this PropertyShape if defined, else null.
+        /// </summary>
         public IEnumerable<IUriNode> Class
         {
             get
@@ -42,6 +57,9 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
             }
         }
 
+        /// <summary>
+        /// Gets an enumerator over any asserted sh:in entries of this PropertyShape.
+        /// </summary>
         public IEnumerable<INode> In
         {
             get
@@ -52,6 +70,9 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
             }
         }
 
+        /// <summary>
+        /// Gets an enumerator over any asserted sh:name entries of this PropertyShape.
+        /// </summary>
         public IEnumerable<ILiteralNode> Names
         {
             get
@@ -61,6 +82,9 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
             }
         }
 
+        /// <summary>
+        /// Gets an enumerator over any asserted sh:description entries of this PropertyShape.
+        /// </summary>
         public IEnumerable<ILiteralNode> Descriptions
         {
             get
@@ -70,6 +94,12 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
             }
         }
 
+        /// <summary>
+        /// Gets or sets the asserted sh:minCount value of this PropertyShape.
+        /// If no sh:minCount if defined, will get null. Will throw if sh:minCount is not an integer,
+        /// or if it is defined multiple times.
+        /// Setting will replace any existing sh:minCount assertions.
+        /// </summary>
         public int? MinCount
         {
             get
@@ -102,6 +132,12 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
             }
         }
 
+        /// <summary>
+        /// Gets or sets the asserted sh:maxCount value of this PropertyShape.
+        /// If no sh:maxCount if defined, will get null. Will throw if sh:maxCount is not an integer,
+        /// or if it is defined multiple times.
+        /// Setting will replace any existing sh:maxCount assertions.
+        /// </summary>
         public int? MaxCount
         {
             get
@@ -134,6 +170,11 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
             }
         }
 
+        /// <summary>
+        /// Adds a node to the sh:in RDF list asserted on this PropertyShape, creating that list and
+        /// assertion if it does not already exist.
+        /// </summary>
+        /// <param name="inNode">Node to be added to sh:in list.</param>
         public void AddIn(INode inNode)
         {
             IUriNode shIn = this.Graph.CreateUriNode(SH.In);
@@ -150,6 +191,10 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
             }
         }
 
+        /// <summary>
+        /// Adds an sh:datatype assertion on this PropertyShape. Will NOT replace any existing sh:datatype assertions.
+        /// </summary>
+        /// <param name="dt">Target of new sh:datatype assertion.</param>
         public void AddDatatype(Uri dt)
         {
             IUriNode shDatatype = this.Graph.CreateUriNode(SH.datatype);
@@ -157,6 +202,10 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
             this.Graph.Assert(this.Node, shDatatype, dtNode);
         }
 
+        /// <summary>
+        /// Adds an sh:class assertion on this PropertyShape. Will NOT replace any existing sh:class assertions.
+        /// </summary>
+        /// <param name="cls">Target of new sh:class assertion.</param>
         public void AddClass(Uri cls)
         {
             IUriNode shClass = this.Graph.CreateUriNode(SH.cls);
@@ -164,6 +213,11 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
             this.Graph.Assert(this.Node, shClass, clsNode);
         }
 
+        /// <summary>
+        /// Adds an sh:name assertion on this PropertyShape. Will NOT replace any existing sh:name assertions.
+        /// </summary>
+        /// <param name="language">Name language tag.</param>
+        /// <param name="value">Name value.</param>
         public void AddName(string language, string value)
         {
             IUriNode shName = this.Graph.CreateUriNode(SH.name);
@@ -171,6 +225,10 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
             this.Graph.Assert(this.Node, shName, nameNode);
         }
 
+        /// <summary>
+        /// Adds an sh:node assertion on this PropertyShape. Will NOT replace any existing sh:node assertions.
+        /// </summary>
+        /// <param name="node">Target of new sh:node assertion.</param>
         public void AddNode(Uri node)
         {
             IUriNode nodeTarget = this.Graph.CreateUriNode(node);
@@ -178,6 +236,11 @@ namespace RealEstateCore.DotNetRdfExtensions.SHACL
             this.Graph.Assert(this.Node, shNode, nodeTarget);
         }
 
+        /// <summary>
+        /// Adds an sh:description assertion on this PropertyShape. Will NOT replace any existing sh:description assertions.
+        /// </summary>
+        /// <param name="language">Description language tag.</param>
+        /// <param name="value">Description value.</param>
         public void AddDescription(string language, string value)
         {
             IUriNode shDescription = this.Graph.CreateUriNode(SH.description);
